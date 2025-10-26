@@ -69,19 +69,23 @@ def setup_platform(
     var_conf = config[CONF_MONITORED_VARIABLES]
     pins = config[CONF_PINS]
 
-    try:
-        response = requests.get(resource, timeout=10).json()
-    except requests.exceptions.MissingSchema:
-        _LOGGER.error(
-            "Missing resource or schema in configuration. Add http:// to your URL"
-        )
-        return
-    except requests.exceptions.ConnectionError:
-        _LOGGER.error("No route to device at %s", resource)
+    response = _fetch_resource(resource)
+    if response is None:
         return
 
     arest = ArestData(resource)
-
+    def _fetch_resource(resource: str) -> dict | None:
+        """Fetch data from the aREST device, logging errors if they occur."""
+        try:
+            return requests.get(resource, timeout=10).json()
+        except requests.exceptions.MissingSchema:
+            _LOGGER.error(
+            "Missing resource or schema in configuration. Add http:// to your URL"
+            )
+        except requests.exceptions.ConnectionError:
+            _LOGGER.error("No route to device at %s", resource)
+        return None
+    
     def make_renderer(value_template):
         """Create a renderer based on variable_template value."""
         if value_template is None:
